@@ -1,28 +1,17 @@
-service: notes-optimized
+service: notes-prod
 frameworkVersion: "3"
 
 provider:
   name: aws
   runtime: nodejs18.x
-  architecture: arm64
   stage: dev
   region: us-east-1
   environment:
     STAGE: ${self:custom.stage}
-    AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
     NOTES_TABLE: !Ref NotesTable
-
-package:
-  individually: true
 
 custom:
   stage: ${opt:stage, self:provider.stage}
-  prune:
-    automatic: true
-    number: 3
-  esbuild:
-    bundle: true
-    minify: true
 
 functions:
   createNote:
@@ -45,9 +34,6 @@ functions:
       - http:
           path: notes/{id}
           method: put
-          request:
-            schemas:
-              application/json: ${file(schemas/Note.json)}
     iamRoleStatements:
       - Effect: Allow
         Action: dynamodb:UpdateItem
@@ -59,10 +45,6 @@ functions:
       - http:
           path: notes/{id}
           method: get
-          request:
-            parameters:
-              paths:
-                id: true
     iamRoleStatements:
       - Effect: Allow
         Action: dynamodb:GetItem
@@ -74,10 +56,6 @@ functions:
       - http:
           path: notes/{id}
           method: delete
-          request:
-            parameters:
-              paths:
-                id: true
     iamRoleStatements:
       - Effect: Allow
         Action: dynamodb:DeleteItem
@@ -98,6 +76,4 @@ resources:
   Resources: ${file(resources.yml)}
 
 plugins:
-  - serverless-prune-plugin
   - serverless-iam-roles-per-function
-  - serverless-esbuild
