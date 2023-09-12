@@ -1,0 +1,103 @@
+service: notes-optimized
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  architecture: arm64
+  stage: dev
+  region: us-east-1
+  environment:
+    STAGE: ${self:custom.stage}
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
+    NOTES_TABLE: !Ref NotesTable
+
+package:
+  individually: true
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  prune:
+    automatic: true
+    number: 3
+  esbuild:
+    bundle: true
+    minify: true
+
+functions:
+  createNote:
+    handler: functions/createNote.handler
+    events:
+      - http:
+          path: notes
+          method: post
+          request:
+            schemas:
+              application/json: ${file(schemas/Note.json)}
+    iamRoleStatements:
+      - Effect: Allow
+        Action: dynamodb:PutItem
+        Resource: !GetAtt NotesTable.Arn
+
+  updateNote:
+    handler: functions/updateNote.handler
+    events:
+      - http:
+          path: notes/{id}
+          method: put
+          request:
+            schemas:
+              application/json: ${file(schemas/Note.json)}
+    iamRoleStatements:
+      - Effect: Allow
+        Action: dynamodb:UpdateItem
+        Resource: !GetAtt NotesTable.Arn
+
+  getNote:
+    handler: functions/getNote.handler
+    events:
+      - http:
+          path: notes/{id}
+          method: get
+          request:
+            parameters:
+              paths:
+                id: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action: dynamodb:GetItem
+        Resource: !GetAtt NotesTable.Arn
+
+  deleteNote:
+    handler: functions/deleteNote.handler
+    events:
+      - http:
+          path: notes/{id}
+          method: delete
+          request:
+            parameters:
+              paths:
+                id: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action: dynamodb:DeleteItem
+        Resource: !GetAtt NotesTable.Arn
+
+  getAllNotes:
+    handler: functions/getAllNotes.handler
+    events:
+      - http:
+          path: notes
+          method: get
+    iamRoleStatements:
+      - Effect: Allow
+        Action: dynamodb:Scan
+        Resource: !GetAtt NotesTable.Arn
+
+resources:
+  Resources: ${file(resources.yml)}
+
+plugins:
+  - serverless-prune-plugin
+  - serverless-iam-roles-per-function
+  - serverless-esbuild

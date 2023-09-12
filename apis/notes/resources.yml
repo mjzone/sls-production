@@ -1,0 +1,16 @@
+#Notes dynamodb table
+NotesTable:
+  Type: AWS::DynamoDB::Table
+  Properties:
+    BillingMode: PAY_PER_REQUEST
+    AttributeDefinitions:
+      - AttributeName: id
+        AttributeType: S
+    KeySchema:
+      - AttributeName: id
+        KeyType: HASH
+    Tags:
+      - Key: Environment
+        Value: ${self:custom.stage}
+      - Key: Name
+        Value: notes-table
