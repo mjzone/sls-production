@@ -1,5 +1,5 @@
 "use strict";
-const { v4: uuidv4 } = require("uuid");
+const { uuid } = require("uuidv4");
 const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
 const { DynamoDBDocumentClient,PutCommand } = require("@aws-sdk/lib-dynamodb");
 const helper = require("./lib/helper");
@@ -15,7 +15,7 @@ module.exports.handler = async (event) => {
     return helper.respond(400, "Title and body must NOT be empty");
   }
   try {
-    note.id = uuidv4();
+    note.id = uuid();
     const params = {
       TableName: NOTES_TABLE,
       Item: {
